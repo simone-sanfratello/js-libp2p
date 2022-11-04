@@ -85,12 +85,14 @@ export class IdentifyService implements Startable {
   }
 
   private readonly init: IdentifyServiceInit
+  private readonly identifiedPeers: Set<string>
   private started: boolean
 
   constructor (components: IdentifyServiceComponents, init: IdentifyServiceInit) {
     this.components = components
     this.started = false
     this.init = init
+    this.identifiedPeers = new Set()
 
     this.identifyProtocolStr = `/${init.protocolPrefix}/${MULTICODEC_IDENTIFY_PROTOCOL_NAME}/${MULTICODEC_IDENTIFY_PROTOCOL_VERSION}`
     this.identifyPushProtocolStr = `/${init.protocolPrefix}/${MULTICODEC_IDENTIFY_PUSH_PROTOCOL_NAME}/${MULTICODEC_IDENTIFY_PUSH_PROTOCOL_VERSION}`
@@ -104,7 +106,14 @@ export class IdentifyService implements Startable {
     // When a new connection happens, trigger identify
     this.components.connectionManager.addEventListener('peer:connect', (evt) => {
       const connection = evt.detail
+      console.log('identifyService peer:connect')
       this.identify(connection).catch(log.error)
+    })
+
+    this.components.connectionManager.addEventListener('peer:disconnect', (evt) => {
+      const connection = evt.detail
+      console.log('identifyService peer:disconnect')
+      this.identifiedPeers.delete(connection.remotePeer.toString())
     })
 
     // When self multiaddrs change, trigger identify-push
@@ -291,17 +300,14 @@ export class IdentifyService implements Startable {
     }
   }
 
-  isAlreadyIdentified (connection: Connection): Boolean {
-    return false
-  }
-
   /**
    * Requests the `Identify` message from peer associated with the given `connection`.
    * If the identified peer does not match the `PeerId` associated with the connection,
    * an error will be thrown.
    */
   async identify (connection: Connection, options: AbortOptions = {}): Promise<void> {
-    if (this.isAlreadyIdentified(connection)) { return }
+    if (this.identifiedPeers.has(connection.remotePeer.toString())) { return }
+    this.identifiedPeers.add(connection.remotePeer.toString())
 
     const message = await this._identify(connection, options)
 
