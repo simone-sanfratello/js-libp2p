@@ -1,5 +1,6 @@
 /* eslint-env mocha */
 
+import getPort from 'get-port'
 import { expect } from 'aegir/chai'
 import { createNode, createPeerId } from '../utils/creators/peer.js'
 import { mockConnection, mockDuplex, mockMultiaddrConnection, mockUpgrader } from '@libp2p/interface-mocks'
@@ -324,6 +325,42 @@ describe('libp2p.connections', () => {
       await libp2p.stop()
     })
 
+    it('should identify connection on dial and get proper announce addresses', async () => {
+      const announceAddrs = [
+        '/dns4/peers1.com/tcp/433/wss',
+        '/dns4/peers2.com/tcp/433/wss'
+      ]
+      const port = await getPort()
+
+      const server = await createNode({
+        config: {
+          addresses: {
+            announce: announceAddrs,
+            listen: [`/ip4/127.0.0.1/tcp/${port}/ws`]
+          }
+        }
+      })
+
+      const client = await createNode({
+        config: {
+          addresses: {
+            listen: ['/ip4/127.0.0.1/tcp/0/ws']
+          }
+        }
+      })
+
+      const connection = await client.dial(`/ip4/127.0.0.1/tcp/${port}/ws/p2p/${server.peerId.toString()}`)
+      const clientPeer = await client.peerStore.get(server.peerId)
+
+      expect(clientPeer.addresses).to.have.length(2)
+      expect(clientPeer.addresses[0].multiaddr.toString()).to.equal(announceAddrs[0].toString())
+      expect(clientPeer.addresses[1].multiaddr.toString()).to.equal(announceAddrs[1].toString())
+
+      await connection.close()
+      await server.stop()
+      await client.stop()
+    })
+
     it('should be closed status once immediately stopping', async () => {
       libp2p = await createNode({
         config: createBaseOptions({
@@ -442,7 +479,7 @@ describe('libp2p.connections', () => {
 
       await libp2p.dial(fullMultiaddr)
 
-      expect(filterMultiaddrForPeer.callCount).to.equal(2)
+      expect(filterMultiaddrForPeer.callCount).to.equal(3)
 
       const args = filterMultiaddrForPeer.getCall(1).args
       expect(args[0].toString()).to.equal(remoteLibp2p.peerId.toString())

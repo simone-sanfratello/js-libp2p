@@ -180,7 +180,7 @@ export class IdentifyService implements Startable {
       try {
         // fails on node < 15.4
         setMaxListeners?.(Infinity, timeoutController.signal)
-      } catch {}
+      } catch { }
 
       try {
         stream = await connection.newStream([this.identifyPushProtocolStr], {
@@ -251,7 +251,7 @@ export class IdentifyService implements Startable {
       try {
         // fails on node < 15.4
         setMaxListeners?.(Infinity, timeoutController.signal)
-      } catch {}
+      } catch { }
     }
 
     try {
@@ -291,12 +291,18 @@ export class IdentifyService implements Startable {
     }
   }
 
+  isAlreadyIdentified (connection: Connection): Boolean {
+    return false
+  }
+
   /**
    * Requests the `Identify` message from peer associated with the given `connection`.
    * If the identified peer does not match the `PeerId` associated with the connection,
    * an error will be thrown.
    */
   async identify (connection: Connection, options: AbortOptions = {}): Promise<void> {
+    if (this.isAlreadyIdentified(connection)) { return }
+
     const message = await this._identify(connection, options)
 
     const {
@@ -395,7 +401,7 @@ export class IdentifyService implements Startable {
     try {
       // fails on node < 15.4
       setMaxListeners?.(Infinity, timeoutController.signal)
-    } catch {}
+    } catch { }
 
     try {
       const publicKey = this.components.peerId.publicKey ?? new Uint8Array(0)
@@ -447,7 +453,7 @@ export class IdentifyService implements Startable {
     try {
       // fails on node < 15.4
       setMaxListeners?.(Infinity, timeoutController.signal)
-    } catch {}
+    } catch { }
 
     let message: Identify | undefined
     try {
