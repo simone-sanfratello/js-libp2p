@@ -297,6 +297,8 @@ export class IdentifyService implements Startable {
    * an error will be thrown.
    */
   async identify (connection: Connection, options: AbortOptions = {}): Promise<void> {
+    console.log(' +++ identify ...', connection.stat.direction, connection.remotePeer.toString())
+
     const message = await this._identify(connection, options)
 
     const {
@@ -349,7 +351,9 @@ export class IdentifyService implements Startable {
 
           log('identify completed for peer %p and protocols %o', id, protocols)
 
-          return
+          console.log(' +++ identify DONE', connection.stat.direction, connection.remotePeer.toString())
+
+    return
         }
       } catch (err: any) {
         log('received invalid envelope, discard it and fallback to listenAddrs is available', err)

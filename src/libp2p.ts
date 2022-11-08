@@ -346,7 +346,7 @@ export class Libp2pNode extends EventEmitter<Libp2pEvents> implements Libp2p {
     return Array.from(peerSet)
   }
 
-  async dial (peer: PeerId | Multiaddr, options: AbortOptions = {}): Promise<Connection> {
+  async dial (peer: PeerId | Multiaddr | string, options: AbortOptions = {}): Promise<Connection> {
     const { id, multiaddrs } = getPeer(peer)
 
     await this.components.peerStore.addressBook.add(id, multiaddrs)

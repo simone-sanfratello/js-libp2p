@@ -63,6 +63,8 @@ describe('libp2p.dialer.identifyService', () => {
     await pWaitFor(() => peerStoreSpyConsumeRecord.callCount === 1 && peerStoreSpyAdd.callCount === 1)
     expect(identityServiceIdentifySpy.callCount).to.equal(1)
 
+    // TODO assert identify result
+
     // The connection should have no open streams
     await pWaitFor(() => connection.streams.length === 0)
     await connection.close()
